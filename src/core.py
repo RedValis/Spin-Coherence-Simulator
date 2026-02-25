@@ -2,12 +2,16 @@
 core.py – Core physics and time-evolution functions.
 =====================================================
 
-Prototype 1 implements pure transverse coherence decay:
-
+Pure transverse coherence decay:
     L(t) = exp(-t / T2)
 
-No precession, no T1 relaxation. I'm trying to have Future prototypes that will layer
-in Bloch-equation evolution, T1, and pulse sequences. But I will see if that's possible
+Bloch vector + Larmor precession:
+    Mx(t) = M0 * cos(ω₀ t) * [exp(-t/T2)]
+    My(t) = M0 * sin(ω₀ t) * [exp(-t/T2)]
+    Mz(t) = Mz0  (constant — no T1 in P2)
+
+    Transverse magnitude without T2:  √(Mx² + My²) = M0  (constant)
+    Transverse magnitude with T2:     √(Mx² + My²) = M0·exp(-t/T2)
 """
 
 from __future__ import annotations
@@ -15,7 +19,7 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -203,6 +207,176 @@ def plot_coherence_decay(
     ax.set_facecolor("#F9F9F9")
     fig.patch.set_facecolor("white")
     fig.tight_layout()
+
+    if save_path:
+        fig.savefig(save_path, dpi=150, bbox_inches="tight")
+
+    return fig
+
+
+# ===========================================================================
+# PROTOTYPE 2 – Bloch vector & Larmor precession
+# ===========================================================================
+
+def bloch_precession(
+    t,
+    M0: float = 1.0,
+    omega0: float = 2 * np.pi * 1e3,
+    T2=None,
+    Mz0: float = 0.0,
+):
+    """Compute Bloch vector components during Larmor precession.
+
+    The spin starts fully in the transverse plane after an ideal pi/2 pulse:
+        M(0) = [M0, 0, Mz0]
+
+    Precession around z-axis at angular frequency omega0:
+        Mx(t) = M0 * cos(omega0 * t)
+        My(t) = M0 * sin(omega0 * t)
+        Mz(t) = Mz0  (constant; T1 added in Prototype 3)
+
+    With optional T2 dephasing:
+        Mx(t) = M0 * cos(omega0 * t) * exp(-t / T2)
+        My(t) = M0 * sin(omega0 * t) * exp(-t / T2)
+
+    Parameters
+    ----------
+    t      : np.ndarray  time array (same units as 1/omega0 and T2)
+    M0     : float       initial transverse magnitude          (default 1.0)
+    omega0 : float       Larmor angular frequency rad/[t_unit] (default 2pi*1e3)
+    T2     : float|None  transverse relaxation time; None = no decay
+    Mz0    : float       initial longitudinal component        (default 0)
+
+    Returns
+    -------
+    Mx, My, Mz : np.ndarray, shape (N,) each
+
+    Invariants (for test suite)
+    ---------------------------
+    No T2 :  sqrt(Mx**2 + My**2)  == M0  everywhere (to machine precision)
+    T2    :  sqrt(Mx**2 + My**2)  == M0 * exp(-t/T2)
+    Always:  Mz == Mz0  (flat)
+    t = 0 :  Mx = M0, My = 0, Mz = Mz0
+    """
+    t = np.asarray(t, dtype=float)
+    if omega0 < 0:
+        raise ValueError(f"omega0 must be non-negative, got {omega0}")
+    if T2 is not None and T2 <= 0:
+        raise ValueError(f"T2 must be positive when supplied, got {T2}")
+
+    decay = simple_T2_decay(t, T2) if T2 is not None else np.ones_like(t)
+
+    Mx = M0 * np.cos(omega0 * t) * decay
+    My = M0 * np.sin(omega0 * t) * decay
+    Mz = np.full_like(t, float(Mz0))
+
+    return Mx, My, Mz
+
+
+def plot_bloch_components(
+    t,
+    Mx,
+    My,
+    Mz,
+    T2=None,
+    omega0=None,
+    time_unit: str = "µs",
+    title: str = "Bloch Vector Components",
+    save_path=None,
+):
+    """Four-panel figure: Mx(t), My(t), Mz(t), transverse magnitude |M_perp|(t).
+
+    Panels
+    ------
+    Top-left  : Mx(t) with ±decay envelope
+    Top-right : My(t) with ±decay envelope
+    Bot-left  : Mz(t) (flat in P2, no T1)
+    Bot-right : sqrt(Mx^2 + My^2) vs T2 exp decay overlay
+
+    Parameters
+    ----------
+    t, Mx, My, Mz : arrays from bloch_precession()
+    T2            : draws envelope + (T2, 1/e) marker when given
+    omega0        : used for frequency annotation (optional)
+    time_unit     : axis label suffix
+    title         : figure suptitle
+    save_path     : save PNG if given
+    """
+    M_perp = np.sqrt(Mx**2 + My**2)
+
+    C_MX   = "#E63946"
+    C_MY   = "#2C7BB6"
+    C_MZ   = "#6A994E"
+    C_PERP = "#9B2226"
+    C_ENV  = "#F4A261"
+    C_REF  = "#457B9D"
+
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7), sharex=True)
+    fig.suptitle(title, fontsize=14, fontweight="bold", y=0.98)
+
+    ax_mx, ax_my = axes[0, 0], axes[0, 1]
+    ax_mz, ax_mp = axes[1, 0], axes[1, 1]
+
+    def _envelope(ax, color):
+        if T2 is not None:
+            env = np.exp(-t / T2)
+            ax.plot(t,  env, "--", color=color, lw=1.1, alpha=0.7, label="envelope")
+            ax.plot(t, -env, "--", color=color, lw=1.1, alpha=0.7)
+            ax.fill_between(t, -env, env, color=color, alpha=0.07)
+
+    def _style(ax, ylabel):
+        ax.axhline(0, color="black", lw=0.6, alpha=0.4)
+        ax.set_ylabel(ylabel, fontsize=11)
+        ax.set_ylim(-1.15, 1.15)
+        ax.legend(fontsize=8, loc="upper right", framealpha=0.85)
+        ax.grid(True, linestyle="--", alpha=0.35)
+        ax.set_facecolor("#F9F9F9")
+
+    # Mx
+    ax_mx.plot(t, Mx, color=C_MX, lw=1.8, label=r"$M_x(t)$")
+    _envelope(ax_mx, C_ENV)
+    _style(ax_mx, r"$M_x$")
+    ax_mx.set_title(r"$M_x = M_0\cos(\omega_0 t)\,e^{-t/T_2}$", fontsize=9)
+
+    # My
+    ax_my.plot(t, My, color=C_MY, lw=1.8, label=r"$M_y(t)$")
+    _envelope(ax_my, C_ENV)
+    _style(ax_my, r"$M_y$")
+    ax_my.set_title(r"$M_y = M_0\sin(\omega_0 t)\,e^{-t/T_2}$", fontsize=9)
+
+    # Mz
+    ax_mz.plot(t, Mz, color=C_MZ, lw=2.0, label=r"$M_z(t)$")
+    _style(ax_mz, r"$M_z$")
+    ax_mz.set_title(r"$M_z(t) = M_{z0}$  (no $T_1$ yet)", fontsize=9)
+    ax_mz.set_xlabel(f"Time  ({time_unit})", fontsize=11)
+
+    # |M_perp|
+    ax_mp.plot(t, M_perp, color=C_PERP, lw=2.0,
+               label=r"$|M_\perp| = \sqrt{M_x^2+M_y^2}$")
+    if T2 is not None:
+        env = np.exp(-t / T2)
+        ax_mp.plot(t, env, "--", color=C_REF, lw=1.4, alpha=0.8,
+                   label=rf"$e^{{-t/T_2}}$  ($T_2$={T2} {time_unit})")
+        idx = np.argmin(np.abs(t - T2))
+        ax_mp.plot(t[idx], M_perp[idx], "o", color=C_REF, ms=7, zorder=6)
+        ax_mp.annotate(
+            r"$(T_2,\;1/e)$",
+            xy=(t[idx], M_perp[idx]),
+            xytext=(t[idx] + t[-1] * 0.06, M_perp[idx] + 0.08),
+            fontsize=8, color=C_REF,
+            arrowprops=dict(arrowstyle="->", color=C_REF, lw=0.9),
+        )
+    ax_mp.axhline(0, color="black", lw=0.6, alpha=0.4)
+    ax_mp.set_ylim(-0.05, 1.15)
+    ax_mp.set_ylabel(r"$|M_\perp|$", fontsize=11)
+    ax_mp.set_title(r"Transverse magnitude  $|M_\perp|(t)$", fontsize=9)
+    ax_mp.set_xlabel(f"Time  ({time_unit})", fontsize=11)
+    ax_mp.legend(fontsize=8, loc="upper right", framealpha=0.85)
+    ax_mp.grid(True, linestyle="--", alpha=0.35)
+    ax_mp.set_facecolor("#F9F9F9")
+
+    fig.patch.set_facecolor("white")
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
 
     if save_path:
         fig.savefig(save_path, dpi=150, bbox_inches="tight")
