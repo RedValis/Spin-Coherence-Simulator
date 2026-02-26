@@ -1,17 +1,28 @@
 """
 core.py – Core physics and time-evolution functions.
 =====================================================
-
-Pure transverse coherence decay:
+I love physics, too bad this is so esoteric and difficult 💔
+Prototype 1  –  Pure transverse coherence decay:
     L(t) = exp(-t / T2)
 
-Bloch vector + Larmor precession:
+Prototype 2  –  Bloch vector + Larmor precession (analytic):
     Mx(t) = M0 * cos(ω₀ t) * [exp(-t/T2)]
     My(t) = M0 * sin(ω₀ t) * [exp(-t/T2)]
     Mz(t) = Mz0  (constant — no T1 in P2)
 
-    Transverse magnitude without T2:  √(Mx² + My²) = M0  (constant)
-    Transverse magnitude with T2:     √(Mx² + My²) = M0·exp(-t/T2)
+Prototype 3  –  Full Bloch equations (numerical ODE, T1 + T2):
+    dMx/dt = +ω₀·My  −  Mx/T2
+    dMy/dt = −ω₀·Mx  −  My/T2
+    dMz/dt =          − (Mz − Meq) / T1
+
+    Integrated with scipy RK45 (solve_ivp).  Analytic solution for
+    B‖z included for cross-validation.
+
+    Key invariants:
+      T1 = T2        → isotropic decay, |M| shrinks uniformly
+      T1 >> T2       → transverse dies fast, Mz recovers slowly
+      T1 → ∞        → no longitudinal recovery (Mz stays put)
+      T2 → ∞        → no dephasing (|M⊥| constant, only Mz relaxes)
 """
 
 from __future__ import annotations
@@ -20,6 +31,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from typing import Tuple, Optional
+from scipy.integrate import solve_ivp
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +279,7 @@ def bloch_precession(
     decay = simple_T2_decay(t, T2) if T2 is not None else np.ones_like(t)
 
     Mx = M0 * np.cos(omega0 * t) * decay
-    My = M0 * np.sin(omega0 * t) * decay
+    My = -M0 * np.sin(omega0 * t) * decay
     Mz = np.full_like(t, float(Mz0))
 
     return Mx, My, Mz
@@ -377,6 +389,349 @@ def plot_bloch_components(
 
     fig.patch.set_facecolor("white")
     fig.tight_layout(rect=[0, 0, 1, 0.96])
+
+    if save_path:
+        fig.savefig(save_path, dpi=150, bbox_inches="tight")
+
+    return fig
+
+
+# ===========================================================================
+# PROTOTYPE 3 – Full Bloch equations: T1 + T2 + numerical ODE integration
+# ===========================================================================
+
+def bloch_rhs(
+    t: float,
+    M: np.ndarray,
+    gamma: float,
+    B: np.ndarray,
+    T1: float,
+    T2: float,
+    M0: float,
+) -> np.ndarray:
+    """Right-hand side of the Bloch equations.
+
+    The full phenomenological Bloch equations for magnetisation M = [Mx, My, Mz]
+    in an applied field B = [Bx, By, Bz]:
+
+        dMx/dt = gamma * (M × B)_x  -  Mx / T2
+        dMy/dt = gamma * (M × B)_y  -  My / T2
+        dMz/dt = gamma * (M × B)_z  -  (Mz - M0) / T1
+
+    For B = [0, 0, B0] the cross product gives:
+        (M × B)_x =  My * B0
+        (M × B)_y = -Mx * B0
+        (M × B)_z =  0
+
+    So the equations reduce to:
+        dMx/dt =  omega0 * My  -  Mx / T2
+        dMy/dt = -omega0 * Mx  -  My / T2
+        dMz/dt = -(Mz - M0) / T1
+
+    where omega0 = gamma * B0 is the Larmor frequency.
+
+    Parameters
+    ----------
+    t     : float        current time (unused — autonomous ODE, required by solve_ivp)
+    M     : (3,) array   current magnetisation [Mx, My, Mz]
+    gamma : float        gyromagnetic ratio (rad / [time·field])
+    B     : (3,) array   magnetic field vector [Bx, By, Bz]
+    T1    : float        longitudinal relaxation time  (T1 >= T2 always)
+    T2    : float        transverse relaxation time
+    M0    : float        thermal equilibrium magnetisation (Mz → M0 at long t)
+
+    Returns
+    -------
+    dMdt : (3,) np.ndarray
+    """
+    Mx, My, Mz = M
+    Bx, By, Bz = B
+
+    # M × B  (full 3-D cross product — works for any field direction)
+    cross_x = My * Bz - Mz * By
+    cross_y = Mz * Bx - Mx * Bz
+    cross_z = Mx * By - My * Bx
+
+    dMx = gamma * cross_x - Mx / T2
+    dMy = gamma * cross_y - My / T2
+    dMz = gamma * cross_z - (Mz - M0) / T1
+
+    return np.array([dMx, dMy, dMz])
+
+
+def simulate_bloch(
+    M_init: np.ndarray,
+    gamma: float,
+    B: np.ndarray,
+    T1: float,
+    T2: float,
+    M0: float,
+    t_max: float,
+    dt: float,
+    method: str = "RK45",
+    rtol: float = 1e-8,
+    atol: float = 1e-10,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Numerically integrate the Bloch equations using scipy solve_ivp.
+
+    Uses adaptive Runge-Kutta (RK45 by default) for accuracy across stiff
+    regimes (e.g. T2 << T1).  The solution is then interpolated onto a
+    uniform time grid of spacing dt for downstream plotting and analysis.
+
+    Parameters
+    ----------
+    M_init : (3,) array-like
+        Initial magnetisation [Mx0, My0, Mz0].
+        Typical: [1, 0, 0]  (spin tipped to x after pi/2 pulse)
+                 [0, 0, 1]  (equilibrium — should stay there)
+    gamma  : float
+        Gyromagnetic ratio.  For normalised units (omega0 = gamma * B0)
+        use gamma=1 and set B0 = omega0 directly.
+    B      : (3,) array-like
+        Applied field [Bx, By, Bz].  Typically [0, 0, B0].
+    T1     : float   longitudinal relaxation time
+    T2     : float   transverse relaxation time  (T2 <= T1 always)
+    M0     : float   equilibrium magnetisation (Mz → M0 as t → ∞)
+    t_max  : float   end time for simulation
+    dt     : float   output time step (for uniform grid)
+    method : str     ODE solver: 'RK45' (default), 'RK23', 'DOP853', 'Radau'
+    rtol   : float   relative tolerance for solver
+    atol   : float   absolute tolerance for solver
+
+    Returns
+    -------
+    t  : (N,) np.ndarray   uniform time grid from 0 to t_max
+    Mx : (N,) np.ndarray
+    My : (N,) np.ndarray
+    Mz : (N,) np.ndarray
+
+    Physical constraints / checks
+    ------------------------------
+    * T2 <= T1 always  (dephasing faster than population relaxation)
+    * M_perp → 0  as t → ∞
+    * Mz     → M0 as t → ∞
+    * If M_init = [0, 0, M0]: nothing moves (equilibrium)
+    * If T1 → ∞: Mz stays fixed (no population relaxation)
+    * If T2 → ∞: |M_perp| stays constant (pure precession)
+    """
+    from scipy.integrate import solve_ivp
+
+    M_init = np.asarray(M_init, dtype=float)
+    B      = np.asarray(B,      dtype=float)
+
+    if T1 <= 0:
+        raise ValueError(f"T1 must be positive, got {T1}")
+    if T2 <= 0:
+        raise ValueError(f"T2 must be positive, got {T2}")
+    if T2 > T1:
+        raise ValueError(f"T2 ({T2}) cannot exceed T1 ({T1}) — unphysical")
+    if t_max <= 0:
+        raise ValueError(f"t_max must be positive, got {t_max}")
+    if dt <= 0:
+        raise ValueError(f"dt must be positive, got {dt}")
+
+    t_eval = time_axis(t_max, dt)
+
+    sol = solve_ivp(
+        fun=bloch_rhs,
+        t_span=(0.0, t_max),
+        y0=M_init,
+        method=method,
+        t_eval=t_eval,
+        args=(gamma, B, T1, T2, M0),
+        rtol=rtol,
+        atol=atol,
+        dense_output=False,
+    )
+
+    if not sol.success:
+        raise RuntimeError(f"solve_ivp failed: {sol.message}")
+
+    t  = sol.t
+    Mx = sol.y[0]
+    My = sol.y[1]
+    Mz = sol.y[2]
+
+    return t, Mx, My, Mz
+
+
+def plot_bloch_relaxation(
+    t: np.ndarray,
+    Mx: np.ndarray,
+    My: np.ndarray,
+    Mz: np.ndarray,
+    T1: Optional[float] = None,
+    T2: Optional[float] = None,
+    M0: float = 1.0,
+    time_unit: str = "µs",
+    title: str = "Full Bloch Relaxation (T₁ + T₂)",
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    """Three-panel figure showing full Bloch relaxation dynamics.
+
+    Panels
+    ------
+    Left   : Mx(t) and My(t) — transverse components with T2 envelope
+    Centre : Mz(t) — longitudinal recovery toward M0 with T1 annotation
+    Right  : |M_perp|(t) vs exp(-t/T2) overlay
+
+    Chosen layout emphasises the *two timescales* (T1 vs T2) side by side.
+    """
+    M_perp = np.sqrt(Mx**2 + My**2)
+
+    C_MX   = "#E63946"
+    C_MY   = "#2C7BB6"
+    C_MZ   = "#6A994E"
+    C_PERP = "#9B2226"
+    C_ENV  = "#F4A261"
+    C_T1   = "#6A994E"
+    C_T2   = "#457B9D"
+    C_EQ   = "#888888"
+
+    fig, (ax_tr, ax_mz, ax_mp) = plt.subplots(
+        1, 3, figsize=(14, 4.8), sharey=False
+    )
+    fig.suptitle(title, fontsize=13, fontweight="bold", y=1.01)
+
+    # -- Left: transverse Mx, My ---------------------------------------------
+    ax_tr.plot(t, Mx, color=C_MX, lw=1.8, label=r"$M_x(t)$")
+    ax_tr.plot(t, My, color=C_MY, lw=1.8, label=r"$M_y(t)$", alpha=0.85)
+    if T2 is not None:
+        env = np.exp(-t / T2)
+        ax_tr.plot(t,  env, "--", color=C_ENV, lw=1.2, alpha=0.8, label=r"$\pm e^{-t/T_2}$")
+        ax_tr.plot(t, -env, "--", color=C_ENV, lw=1.2, alpha=0.8)
+        ax_tr.fill_between(t, -env, env, color=C_ENV, alpha=0.07)
+        # T2 marker
+        ax_tr.axvline(T2, color=C_T2, lw=1.0, ls=":", alpha=0.7,
+                      label=rf"$T_2={T2}$ {time_unit}")
+    ax_tr.axhline(0, color="black", lw=0.5, alpha=0.4)
+    ax_tr.set_xlim(left=0)
+    ax_tr.set_ylim(-1.15, 1.15)
+    ax_tr.set_xlabel(f"Time ({time_unit})", fontsize=11)
+    ax_tr.set_ylabel("Magnetisation", fontsize=11)
+    ax_tr.set_title("Transverse: $M_x$, $M_y$", fontsize=10)
+    ax_tr.legend(fontsize=8, loc="upper right", framealpha=0.85)
+    ax_tr.grid(True, ls="--", alpha=0.35)
+    ax_tr.set_facecolor("#F9F9F9")
+
+    # -- Centre: longitudinal Mz ---------------------------------------------
+    ax_mz.plot(t, Mz, color=C_MZ, lw=2.2, label=r"$M_z(t)$")
+    # equilibrium line
+    ax_mz.axhline(M0, color=C_EQ, lw=1.1, ls="--", alpha=0.7,
+                  label=rf"$M_0 = {M0}$ (equil.)")
+    if T1 is not None:
+        # theoretical recovery from Mz(0) toward M0
+        Mz0 = Mz[0]
+        theory_mz = M0 - (M0 - Mz0) * np.exp(-t / T1)
+        ax_mz.plot(t, theory_mz, ":", color=C_T1, lw=1.4, alpha=0.8,
+                   label=rf"$M_0(1-e^{{-t/T_1}})$  ($T_1$={T1})")
+        ax_mz.axvline(T1, color=C_T1, lw=1.0, ls=":", alpha=0.7,
+                      label=rf"$T_1={T1}$ {time_unit}")
+        # mark (T1, value)
+        idx_T1 = np.argmin(np.abs(t - T1))
+        ax_mz.plot(t[idx_T1], Mz[idx_T1], "o", color=C_T1, ms=6, zorder=6)
+    ax_mz.set_xlim(left=0)
+    ax_mz.set_xlabel(f"Time ({time_unit})", fontsize=11)
+    ax_mz.set_title("Longitudinal: $M_z$", fontsize=10)
+    ax_mz.legend(fontsize=8, loc="lower right", framealpha=0.85)
+    ax_mz.grid(True, ls="--", alpha=0.35)
+    ax_mz.set_facecolor("#F9F9F9")
+
+    # -- Right: transverse magnitude -----------------------------------------
+    ax_mp.plot(t, M_perp, color=C_PERP, lw=2.0,
+               label=r"$|M_\perp| = \sqrt{M_x^2+M_y^2}$")
+    if T2 is not None:
+        env = np.exp(-t / T2)
+        ax_mp.plot(t, env, "--", color=C_T2, lw=1.4, alpha=0.8,
+                   label=rf"$e^{{-t/T_2}}$  ($T_2$={T2} {time_unit})")
+        idx_T2 = np.argmin(np.abs(t - T2))
+        ax_mp.plot(t[idx_T2], M_perp[idx_T2], "o", color=C_T2, ms=6, zorder=6)
+        ax_mp.annotate(
+            r"$(T_2,\;1/e)$",
+            xy=(t[idx_T2], M_perp[idx_T2]),
+            xytext=(t[idx_T2] + t[-1]*0.06, M_perp[idx_T2] + 0.07),
+            fontsize=8, color=C_T2,
+            arrowprops=dict(arrowstyle="->", color=C_T2, lw=0.9),
+        )
+    ax_mp.axhline(0, color="black", lw=0.5, alpha=0.4)
+    ax_mp.set_xlim(left=0)
+    ax_mp.set_ylim(-0.05, 1.15)
+    ax_mp.set_xlabel(f"Time ({time_unit})", fontsize=11)
+    ax_mp.set_title(r"$|M_\perp|(t)$", fontsize=10)
+    ax_mp.legend(fontsize=8, loc="upper right", framealpha=0.85)
+    ax_mp.grid(True, ls="--", alpha=0.35)
+    ax_mp.set_facecolor("#F9F9F9")
+
+    fig.patch.set_facecolor("white")
+    fig.tight_layout()
+
+    if save_path:
+        fig.savefig(save_path, dpi=150, bbox_inches="tight")
+
+    return fig
+
+
+def plot_T1_T2_comparison(
+    t: np.ndarray,
+    scenarios: list,
+    time_unit: str = "µs",
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    """Overlay multiple T1/T2 scenarios to highlight limiting cases.
+
+    Parameters
+    ----------
+    t         : common time axis (all scenarios must share it)
+    scenarios : list of dicts, each with keys:
+                  Mx, My, Mz   – component arrays
+                  label        – legend string
+                  color        – line colour
+    time_unit : axis label suffix
+    save_path : save PNG if given
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), sharex=True)
+    fig.suptitle("Limiting Cases: T₁ and T₂ Regimes", fontsize=13,
+                 fontweight="bold", y=1.01)
+
+    ax_mp, ax_mz, ax_ph = axes
+
+    for sc in scenarios:
+        Mx, My, Mz  = sc["Mx"], sc["My"], sc["Mz"]
+        M_perp = np.sqrt(Mx**2 + My**2)
+        lw     = sc.get("lw", 2.0)
+        ls     = sc.get("ls", "-")
+        c      = sc["color"]
+        lbl    = sc["label"]
+
+        ax_mp.plot(t, M_perp, color=c, lw=lw, ls=ls, label=lbl)
+        ax_mz.plot(t, Mz,     color=c, lw=lw, ls=ls, label=lbl)
+
+        # phase portrait: My vs Mx (spiral in xy plane)
+        ax_ph.plot(Mx, My,    color=c, lw=lw*0.9, ls=ls, label=lbl, alpha=0.85)
+
+    for ax, ylabel, ttl in [
+        (ax_mp, r"$|M_\perp|$",  "Transverse decay"),
+        (ax_mz, r"$M_z$",        "Longitudinal recovery"),
+        (ax_ph, r"$M_y$",        "Phase portrait  (My vs Mx)"),
+    ]:
+        ax.set_ylabel(ylabel, fontsize=11)
+        ax.set_title(ttl, fontsize=10)
+        ax.legend(fontsize=8, framealpha=0.85)
+        ax.grid(True, ls="--", alpha=0.35)
+        ax.set_facecolor("#F9F9F9")
+
+    ax_mp.set_xlabel(f"Time ({time_unit})", fontsize=11)
+    ax_mz.set_xlabel(f"Time ({time_unit})", fontsize=11)
+    ax_ph.set_xlabel(r"$M_x$", fontsize=11)
+    ax_ph.axhline(0, color="black", lw=0.5, alpha=0.4)
+    ax_ph.axvline(0, color="black", lw=0.5, alpha=0.4)
+
+    fig.patch.set_facecolor("white")
+    fig.tight_layout()
 
     if save_path:
         fig.savefig(save_path, dpi=150, bbox_inches="tight")
