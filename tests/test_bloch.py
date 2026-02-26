@@ -35,7 +35,7 @@ def check(name, condition, tol=None):
     return ok
 
 
-# ── shared time axis ─────────────────────────────────────────────────────────
+# -- shared time axis ---------------------------------------------------------
 T2     = 5.0
 omega0 = 2 * np.pi * 0.5      # 0.5 cycles / µs → easy to check
 M0     = 1.0
@@ -45,7 +45,7 @@ t      = time_axis(20.0, 0.02)
 # ═══════════════════════════════════════════════════════════════════════════
 # Group A – initial conditions
 # ═══════════════════════════════════════════════════════════════════════════
-print("\n── Group A: Initial conditions ──────────────────────────────────────")
+print("\n-- Group A: Initial conditions --------------------------------------")
 
 Mx_nd, My_nd, Mz_nd = bloch_precession(t, M0=M0, omega0=omega0, T2=None)
 check("A1: Mx(0) = M0",    np.isclose(Mx_nd[0], M0))
@@ -63,7 +63,7 @@ check("A6: Mz = Mz0 when Mz0 != 0", np.allclose(Mz_mz, 0.5))
 # ═══════════════════════════════════════════════════════════════════════════
 # Group B – transverse magnitude invariant (no T2)
 # ═══════════════════════════════════════════════════════════════════════════
-print("\n── Group B: |M_perp| without T2 ─────────────────────────────────────")
+print("\n-- Group B: |M_perp| without T2 -------------------------------------")
 
 M_perp_nd = np.sqrt(Mx_nd**2 + My_nd**2)
 check("B1: |M_perp| constant (max deviation < 1e-12)",
@@ -77,7 +77,7 @@ check("B3: magnitude does not drift over 1000 cycles",
 # ═══════════════════════════════════════════════════════════════════════════
 # Group C – T2 decay envelope
 # ═══════════════════════════════════════════════════════════════════════════
-print("\n── Group C: |M_perp| with T2 decay ──────────────────────────────────")
+print("\n-- Group C: |M_perp| with T2 decay ----------------------------------")
 
 M_perp_d  = np.sqrt(Mx_d**2 + My_d**2)
 expected  = M0 * np.exp(-t / T2)
@@ -102,7 +102,7 @@ check("C5: |M_perp|(4·T2) ≈ e^-4",
 # ═══════════════════════════════════════════════════════════════════════════
 # Group D – Mz behaviour
 # ═══════════════════════════════════════════════════════════════════════════
-print("\n── Group D: Mz is constant ───────────────────────────────────────────")
+print("\n-- Group D: Mz is constant -------------------------------------------")
 
 check("D1: Mz constant throughout (no T2)",
       np.all(Mz_nd == 0.0))
@@ -115,7 +115,7 @@ check("D3: Mz respects non-zero Mz0",
 # ═══════════════════════════════════════════════════════════════════════════
 # Group E – precession angle
 # ═══════════════════════════════════════════════════════════════════════════
-print("\n── Group E: Larmor precession angle ─────────────────────────────────")
+print("\n-- Group E: Larmor precession angle ---------------------------------")
 
 # check angle at t = pi / omega0  →  Mx should = -M0 (half revolution)
 t_half = np.pi / omega0
@@ -133,7 +133,7 @@ check("E2: My after quarter revolution = M0",
 # ═══════════════════════════════════════════════════════════════════════════
 # Group F – input validation
 # ═══════════════════════════════════════════════════════════════════════════
-print("\n── Group F: Input validation ─────────────────────────────────────────")
+print("\n-- Group F: Input validation -----------------------------------------")
 
 try:
     bloch_precession(t, omega0=-1.0)
@@ -157,7 +157,7 @@ except ValueError:
 # ═══════════════════════════════════════════════════════════════════════════
 # Group G – different M0 amplitudes
 # ═══════════════════════════════════════════════════════════════════════════
-print("\n── Group G: Non-unit M0 ──────────────────────────────────────────────")
+print("\n-- Group G: Non-unit M0 ----------------------------------------------")
 
 for m0 in [0.5, 2.0, 0.01]:
     Mx_g, My_g, _ = bloch_precession(t, M0=m0, omega0=omega0, T2=None)
