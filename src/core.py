@@ -531,6 +531,11 @@ def simulate_bloch(
         raise ValueError(f"dt must be positive, got {dt}")
 
     t_eval = time_axis(t_max, dt)
+    # np.arange can overshoot t_max by a floating-point epsilon.
+    # solve_ivp requires all t_eval values strictly within t_span,
+    # has failed sim tests before
+    # so clip for the sake of safety
+    t_eval = np.clip(t_eval, 0.0, t_max)
 
     sol = solve_ivp(
         fun=bloch_rhs,

@@ -4,10 +4,10 @@ examples/run_prototype4.py
 Demonstrates Prototype 4: pulse sequences — Hahn echo, CPMG, echo sweeps.
 
 Generates four output files:
-  1. prototype4_hahn_echo.png       – single Hahn echo waveform
-  2. prototype4_echo_sweep.png      – echo amplitude vs 2τ (T2 decay curve)
-  3. prototype4_cpmg.png            – CPMG multi-echo train
-  4. prototype4_bloch_sphere_echo.png – Bloch sphere showing refocusing
+  1. prototype4_hahn_echo.png       - single Hahn echo waveform
+  2. prototype4_echo_sweep.png      - echo amplitude vs 2τ (T2 decay curve)
+  3. prototype4_cpmg.png            - CPMG multi-echo train
+  4. prototype4_bloch_sphere_echo.png - Bloch sphere showing refocusing
 
 Usage:
     python examples/run_prototype4.py
@@ -34,7 +34,7 @@ T1     = 50.0
 T2     = 10.0
 dt     = 0.02
 
-print("=== Prototype 4 – Pulse Sequences (Hahn Echo + CPMG) ===\n")
+print("=== Prototype 4 - Pulse Sequences (Hahn Echo + CPMG) ===\n")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Plot 1: Single Hahn echo waveform
