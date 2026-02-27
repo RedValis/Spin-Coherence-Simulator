@@ -1,5 +1,5 @@
 """
-ensemble.py – Inhomogeneous spin ensemble simulation.
+ensemble.py - Inhomogeneous spin ensemble simulation.
 =====================================================
 
 Prototype 5 models a realistic sample where N spins have slightly

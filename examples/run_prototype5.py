@@ -4,10 +4,10 @@ examples/run_prototype5.py
 Prototype 5: inhomogeneous spin ensemble — FID vs Hahn echo.
 
 Outputs:
-  prototype5_fid_sigma_sweep.png   – FID for multiple sigma values
-  prototype5_fid_vs_echo.png       – FID vs echo at fixed sigma (T2* vs T2)
-  prototype5_echo_sweep.png        – echo amplitude vs 2τ for two sigmas
-  prototype5_bloch_sphere_fid.png  – Bloch sphere showing dephasing fan
+  prototype5_fid_sigma_sweep.png   - FID for multiple sigma values
+  prototype5_fid_vs_echo.png       - FID vs echo at fixed sigma (T2* vs T2)
+  prototype5_echo_sweep.png        - echo amplitude vs 2τ for two sigmas
+  prototype5_bloch_sphere_fid.png  - Bloch sphere showing dephasing fan
 
 Usage:
     python examples/run_prototype5.py
@@ -36,7 +36,7 @@ dt     = 0.05
 N      = 300
 SEED   = 42
 
-print("=== Prototype 5 – Inhomogeneous Ensemble ===\n")
+print("=== Prototype 5 - Inhomogeneous Ensemble ===\n")
 
 # ── Plot 1: FID for several sigma values ─────────────────────────────────────
 sigmas  = [0.0, 0.15, 0.30, 0.60]
