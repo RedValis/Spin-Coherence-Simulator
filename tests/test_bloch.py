@@ -1,17 +1,17 @@
 """
-tests/test_bloch_full.py – Unit tests for Prototype 3 (full Bloch equations).
+tests/test_bloch_full.py - Unit tests for Prototype 3 (full Bloch equations).
 ==============================================================================
 
 Physics invariants under test:
 
-  A. bloch_rhs correctness  – cross product, decay terms, analytic spot checks
-  B. Equilibrium            – M_init = [0, 0, M0] never moves
-  C. T2-only decay          – |M_perp| matches exp(-t/T2)
-  D. T1 recovery            – Mz(t) matches M0*(1 - exp(-t/T1)) from Mz0=0
-  E. Limiting cases         – T1>>T2, T2>>T1 (capped at T1), T1=T2
-  F. Long-time behaviour    – Mz → M0, |M_perp| → 0
-  G. Consistency with P2    – simulate_bloch matches bloch_precession when T1→large
-  H. Input validation       – bad T1, T2, T2>T1, bad t_max/dt all raise
+  A. bloch_rhs correctness  - cross product, decay terms, analytic spot checks
+  B. Equilibrium            - M_init = [0, 0, M0] never moves
+  C. T2-only decay          - |M_perp| matches exp(-t/T2)
+  D. T1 recovery            - Mz(t) matches M0*(1 - exp(-t/T1)) from Mz0=0
+  E. Limiting cases         - T1>>T2, T2>>T1 (capped at T1), T1=T2
+  F. Long-time behaviour    - Mz → M0, |M_perp| → 0
+  G. Consistency with P2    - simulate_bloch matches bloch_precession when T1→large
+  H. Input validation       - bad T1, T2, T2>T1, bad t_max/dt all raise
 
 Run with:  pytest tests/test_bloch_full.py -v
            OR:  python tests/test_bloch_full.py
@@ -46,7 +46,7 @@ dt     = 0.05
 
 
 # ===========================================================================
-# Group A – bloch_rhs spot checks
+# Group A - bloch_rhs spot checks
 # ===========================================================================
 print("\n-- Group A: bloch_rhs correctness -----------------------------------")
 
@@ -70,14 +70,14 @@ M_test2 = np.array([0.0, 0.0, M0])
 dM2 = bloch_rhs(0, M_test2, gamma, B, T1, T2, M0)
 check("A5: dMz = 0 when Mz = M0",                     np.isclose(dM2[2], 0.0, atol=1e-14))
 
-# RHS is time-independent (autonomous system) – same result at t=0 and t=99
+# RHS is time-independent (autonomous system) - same result at t=0 and t=99
 dM_t0  = bloch_rhs(0,  M_test, gamma, B, T1, T2, M0)
 dM_t99 = bloch_rhs(99, M_test, gamma, B, T1, T2, M0)
 check("A6: RHS is autonomous (time-independent)",      np.allclose(dM_t0, dM_t99))
 
 
 # ===========================================================================
-# Group B – equilibrium stability
+# Group B - equilibrium stability
 # ===========================================================================
 print("\n-- Group B: Equilibrium invariant -----------------------------------")
 
@@ -91,7 +91,7 @@ check("B3: Mz stays M0 from equilibrium",  np.allclose(Mz_b, M0,  rtol=1e-6))
 
 
 # ===========================================================================
-# Group C – transverse decay matches exp(-t/T2)
+# Group C - transverse decay matches exp(-t/T2)
 # ===========================================================================
 print("\n-- Group C: Transverse T2 decay --------------------------------------")
 
@@ -110,7 +110,7 @@ check("C4: |M_perp|(0) = M0",               np.isclose(M_perp_c[0], M0, rtol=1e-
 
 
 # ===========================================================================
-# Group D – longitudinal T1 recovery
+# Group D - longitudinal T1 recovery
 # ===========================================================================
 print("\n-- Group D: Longitudinal T1 recovery --------------------------------")
 
@@ -130,7 +130,7 @@ check("D5: Mz(T1) ≈ M0*(1-1/e) ≈ 0.632*M0",        np.isclose(Mz_d[idx_T1], 
 
 
 # ===========================================================================
-# Group E – limiting cases
+# Group E - limiting cases
 # ===========================================================================
 print("\n-- Group E: Limiting cases -------------------------------------------")
 
@@ -174,7 +174,7 @@ except ValueError:
 
 
 # ===========================================================================
-# Group F – long-time (steady-state) limits
+# Group F - long-time (steady-state) limits
 # ===========================================================================
 print("\n-- Group F: Long-time convergence -----------------------------------")
 
@@ -190,7 +190,7 @@ check("F4: |M_perp| → 0 at long t", M_perp_f[-1] < 1e-3)
 
 
 # ===========================================================================
-# Group G – consistency with Prototype 2 analytic solution
+# Group G - consistency with Prototype 2 analytic solution
 # ===========================================================================
 print("\n-- Group G: Consistency with P2 analytic solution -------------------")
 
@@ -210,7 +210,7 @@ check("G3: Mz matches P2 analytic (Mz=0)",       np.allclose(Mz_g, 0.0,   atol=1
 
 
 # ===========================================================================
-# Group H – input validation
+# Group H - input validation
 # ===========================================================================
 print("\n-- Group H: Input validation ----------------------------------------")
 

@@ -1,19 +1,19 @@
 """
-core.py – Core physics and time-evolution functions.
+core.py - Core physics and time-evolution functions.
 =====================================================
 I love physics, too bad this is so esoteric and difficult 💔
-Prototype 1  –  Pure transverse coherence decay:
+Prototype 1  -  Pure transverse coherence decay:
     L(t) = exp(-t / T2)
 
-Prototype 2  –  Bloch vector + Larmor precession (analytic):
+Prototype 2  -  Bloch vector + Larmor precession (analytic):
     Mx(t) = M0 * cos(ω₀ t) * [exp(-t/T2)]
     My(t) = M0 * sin(ω₀ t) * [exp(-t/T2)]
     Mz(t) = Mz0  (constant — no T1 in P2)
 
-Prototype 3  –  Full Bloch equations (numerical ODE, T1 + T2):
-    dMx/dt = +ω₀·My  −  Mx/T2
-    dMy/dt = −ω₀·Mx  −  My/T2
-    dMz/dt =          − (Mz − Meq) / T1
+Prototype 3  -  Full Bloch equations (numerical ODE, T1 + T2):
+    dMx/dt = +ω₀·My  -  Mx/T2
+    dMy/dt = -ω₀·Mx  -  My/T2
+    dMz/dt =          - (Mz - Meq) / T1
 
     Integrated with scipy RK45 (solve_ivp).  Analytic solution for
     B‖z included for cross-validation.
@@ -116,7 +116,7 @@ def simulate_simple_coherence(
     T2 : float
         Coherence / dephasing time (µs, ns, or any consistent unit).
     t_max : float
-        Maximum simulation time.  Meaningful range: a few × T2.
+        Maximum simulation time.  Meaningful range: a few x T2.
     dt : float
         Time step.
 
@@ -227,7 +227,7 @@ def plot_coherence_decay(
 
 
 # ===========================================================================
-# PROTOTYPE 2 – Bloch vector & Larmor precession
+# PROTOTYPE 2 - Bloch vector & Larmor precession
 # ===========================================================================
 
 def bloch_precession(
@@ -397,7 +397,7 @@ def plot_bloch_components(
 
 
 # ===========================================================================
-# PROTOTYPE 3 – Full Bloch equations: T1 + T2 + numerical ODE integration
+# PROTOTYPE 3 - Full Bloch equations: T1 + T2 + numerical ODE integration
 # ===========================================================================
 
 def bloch_rhs(
@@ -414,14 +414,14 @@ def bloch_rhs(
     The full phenomenological Bloch equations for magnetisation M = [Mx, My, Mz]
     in an applied field B = [Bx, By, Bz]:
 
-        dMx/dt = gamma * (M × B)_x  -  Mx / T2
-        dMy/dt = gamma * (M × B)_y  -  My / T2
-        dMz/dt = gamma * (M × B)_z  -  (Mz - M0) / T1
+        dMx/dt = gamma * (M x B)_x  -  Mx / T2
+        dMy/dt = gamma * (M x B)_y  -  My / T2
+        dMz/dt = gamma * (M x B)_z  -  (Mz - M0) / T1
 
     For B = [0, 0, B0] the cross product gives:
-        (M × B)_x =  My * B0
-        (M × B)_y = -Mx * B0
-        (M × B)_z =  0
+        (M x B)_x =  My * B0
+        (M x B)_y = -Mx * B0
+        (M x B)_z =  0
 
     So the equations reduce to:
         dMx/dt =  omega0 * My  -  Mx / T2
@@ -447,7 +447,7 @@ def bloch_rhs(
     Mx, My, Mz = M
     Bx, By, Bz = B
 
-    # M × B  (full 3-D cross product — works for any field direction)
+    # M x B  (full 3-D cross product — works for any field direction)
     cross_x = My * Bz - Mz * By
     cross_y = Mz * Bx - Mx * Bz
     cross_z = Mx * By - My * Bx
@@ -683,9 +683,9 @@ def plot_T1_T2_comparison(
     ----------
     t         : common time axis (all scenarios must share it)
     scenarios : list of dicts, each with keys:
-                  Mx, My, Mz   – component arrays
-                  label        – legend string
-                  color        – line colour
+                  Mx, My, Mz   - component arrays
+                  label        - legend string
+                  color        - line colour
     time_unit : axis label suffix
     save_path : save PNG if given
 

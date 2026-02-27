@@ -1,5 +1,5 @@
 """
-visualization.py – Advanced visualisations for spin dynamics.
+visualization.py - Advanced visualisations for spin dynamics.
 =============================================================
 
 Prototype 2 features:

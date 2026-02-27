@@ -4,9 +4,9 @@ examples/run_prototype2.py
 Demonstrates Prototype 2: Bloch vector + Larmor precession + T2 decay.
 
 Generates three output files:
-  1. prototype2_components.png   – Mx, My, Mz, |M_perp| vs time (4-panel)
-  2. prototype2_bloch_sphere.png – 3-D Bloch sphere trajectory
-  3. prototype2_bloch.gif        – animated Bloch vector (optional)
+  1. prototype2_components.png   - Mx, My, Mz, |M_perp| vs time (4-panel)
+  2. prototype2_bloch_sphere.png - 3-D Bloch sphere trajectory
+  3. prototype2_bloch.gif        - animated Bloch vector (optional)
 
 Usage:
     python examples/run_prototype2.py
@@ -27,7 +27,7 @@ T2     = 5.0                   # µs
 f0     = 0.5                   # MHz  →  0.5 cycles / µs
 omega0 = 2 * np.pi * f0        # rad / µs
 M0     = 1.0
-t_max  = 4 * T2                # simulate 4 × T2
+t_max  = 4 * T2                # simulate 4 x T2
 dt     = 0.01                  # µs
 
 # -- Build time axis & compute Bloch vectors -----------------------------------
@@ -40,7 +40,7 @@ Mx, My, Mz = bloch_precession(
     t, M0=M0, omega0=omega0, T2=T2)
 
 # -- Verification printout -----------------------------------------------------
-print("=== Prototype 2 – Bloch Vector & Larmor Precession ===\n")
+print("=== Prototype 2 - Bloch Vector & Larmor Precession ===\n")
 print(f"  T2     = {T2} µs       omega0 = {omega0:.4f} rad/µs  ({f0} MHz)")
 print(f"  t_max  = {t_max} µs    dt     = {dt} µs   ({len(t)} points)\n")
 
@@ -69,7 +69,7 @@ fig_comp = plot_bloch_components(
     t, Mx, My, Mz,
     T2=T2, omega0=omega0,
     time_unit="µs",
-    title=rf"Bloch Components — $\omega_0$ = 2π×{f0} MHz,  $T_2$ = {T2} µs",
+    title=rf"Bloch Components — $\omega_0$ = 2πx{f0} MHz,  $T_2$ = {T2} µs",
     save_path=p_comp,
 )
 print(f"  Saved → {p_comp}")
@@ -79,7 +79,7 @@ p_sphere = os.path.join(out_dir, "prototype2_bloch_sphere.png")
 
 fig_sphere = plot_bloch_sphere_trajectory(
     Mx, My, Mz,
-    title=rf"Bloch Sphere — $\omega_0$=2π×{f0} MHz,  $T_2$={T2} µs",
+    title=rf"Bloch Sphere — $\omega_0$=2πx{f0} MHz,  $T_2$={T2} µs",
     save_path=p_sphere,
 )
 print(f"  Saved → {p_sphere}")

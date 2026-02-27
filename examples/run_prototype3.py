@@ -4,10 +4,10 @@ examples/run_prototype3.py
 Demonstrates Prototype 3: full Bloch equations with T1 and T2 relaxation.
 
 Generates four output files:
-  1. prototype3_relaxation.png    – Mx/My/Mz/|M_perp| for a canonical case
-  2. prototype3_limiting_cases.png – overlay of T1>>T2, T1=T2, T1≈T2 regimes
-  3. prototype3_bloch_sphere.png  – 3-D Bloch sphere with decaying spiral
-  4. prototype3_recovery.png      – Mz recovery from Mz0=0 (inversion recovery)
+  1. prototype3_relaxation.png    - Mx/My/Mz/|M_perp| for a canonical case
+  2. prototype3_limiting_cases.png - overlay of T1>>T2, T1=T2, T1≈T2 regimes
+  3. prototype3_bloch_sphere.png  - 3-D Bloch sphere with decaying spiral
+  4. prototype3_recovery.png      - Mz recovery from Mz0=0 (inversion recovery)
 
 Usage:
     python examples/run_prototype3.py
@@ -33,7 +33,7 @@ omega0 = 2 * np.pi * f0         # rad/µs
 B      = np.array([0.0, 0.0, omega0])   # gamma=1 so B0 = omega0
 M0     = 1.0
 
-print("=== Prototype 3 – Full Bloch Equations (T1 + T2) ===\n")
+print("=== Prototype 3 - Full Bloch Equations (T1 + T2) ===\n")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Plot 1: canonical relaxation  (T1=20, T2=5 µs)
@@ -80,7 +80,7 @@ plot_T1_T2_comparison(t_cmp, scenarios, time_unit="µs", save_path=p2)
 print(f"  Saved → {p2}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Plot 3: Bloch sphere – shows the inward spiral with T2 decay + Mz recovery
+# Plot 3: Bloch sphere - shows the inward spiral with T2 decay + Mz recovery
 # ─────────────────────────────────────────────────────────────────────────────
 T1_s, T2_s = 20.0, 5.0
 _, Mx_s, My_s, Mz_s = simulate_bloch(

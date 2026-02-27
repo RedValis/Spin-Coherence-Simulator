@@ -14,15 +14,15 @@ import numpy as np
 from src.core import simulate_simple_coherence, plot_coherence_decay
 
 # -- Parameters --------------------------------------------------------------
-T2    = 5   # µs   – coherence time
-t_max = 20.0  # µs   – simulate 4 × T2
-dt    = 0.05  # µs   – time step
+T2    = 5   # µs   - coherence time
+t_max = 20.0  # µs   - simulate 4 x T2
+dt    = 0.05  # µs   - time step
 
 # -- Simulate -----------------------------------------------------------------
 t, L = simulate_simple_coherence(T2=T2, t_max=t_max, dt=dt)
 
 # -- Quick verification prints ------------------------------------------------
-print("=== Prototype 1 – Pure T₂ Decay ===")
+print("=== Prototype 1 - Pure T₂ Decay ===")
 print(f"  T2          = {T2} µs")
 print(f"  Time points = {len(t)}")
 print(f"  L(t=0)      = {L[0]:.6f}   (expected 1.000000)")

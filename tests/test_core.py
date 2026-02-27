@@ -1,5 +1,5 @@
 """
-tests/test_core.py – Unit tests for Prototype 1 (pure T2 decay).
+tests/test_core.py - Unit tests for Prototype 1 (pure T2 decay).
 =================================================================
 
 Run with:  pytest tests/ -v
@@ -70,7 +70,7 @@ class TestSimpleT2Decay:
     def test_approaches_zero(self):
         """After many T2 periods the coherence is negligibly small."""
         t = np.array([50.0])
-        L = simple_T2_decay(t, T2=5.0)  # t = 10 × T2
+        L = simple_T2_decay(t, T2=5.0)  # t = 10 x T2
         assert L[0] < 1e-4
 
     def test_output_range(self):
