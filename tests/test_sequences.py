@@ -23,7 +23,7 @@ def check(name, condition):
     return ok
 
 
-# ── shared physics ────────────────────────────────────────────────────────────
+# -- shared physics ------------------------------------------------------------
 gamma  = 1.0
 B0     = 2 * np.pi * 0.5
 B      = np.array([0., 0., B0])
@@ -36,7 +36,7 @@ dt     = 0.02
 # ===========================================================================
 # Group A - apply_pulse
 # ===========================================================================
-print("\n── Group A: apply_pulse ──────────────────────────────────────────────")
+print("\n-- Group A: apply_pulse ----------------------------------------------")
 
 M_z = np.array([0., 0., 1.])
 
@@ -75,7 +75,7 @@ check("A8: π/2_-y tips M_z → -M_x",       np.allclose(M_nx, [-1, 0, 0], atol=
 # ===========================================================================
 # Group B - free_evolve
 # ===========================================================================
-print("\n── Group B: free_evolve ──────────────────────────────────────────────")
+print("\n-- Group B: free_evolve ----------------------------------------------")
 
 M_init = np.array([M0, 0., 0.])
 t_seg, Mx_s, My_s, Mz_s = free_evolve(M_init, t_free=T2, dt=dt,
@@ -93,7 +93,7 @@ check("B5: |M_perp|(T2) ≈ 1/e",
 # ===========================================================================
 # Group C - Hahn echo amplitude and timing
 # ===========================================================================
-print("\n── Group C: Hahn echo amplitude ──────────────────────────────────────")
+print("\n-- Group C: Hahn echo amplitude --------------------------------------")
 
 for tau in [1.0, 2.0, 5.0]:
     t_h, Mx_h, My_h, _ = hahn_echo_sequence(
@@ -113,7 +113,7 @@ check("C5: time axis ends near 2τ",        np.isclose(t_c[-1], 2*tau_c, rtol=1e
 # ===========================================================================
 # Group D - echo amplitude equals exp(-2τ/T2) (physics check)
 # ===========================================================================
-print("\n── Group D: Echo amplitude == exp(-2τ/T2) ────────────────────────────")
+print("\n-- Group D: Echo amplitude == exp(-2τ/T2) ----------------------------")
 
 tau_d = 3.0
 t_dd, Mx_dd, My_dd, _ = hahn_echo_sequence(
@@ -126,7 +126,7 @@ check("D1: Hahn echo amp ≈ exp(-2τ/T2)",
 # ===========================================================================
 # Group E - limiting cases
 # ===========================================================================
-print("\n── Group E: Limiting cases ───────────────────────────────────────────")
+print("\n-- Group E: Limiting cases -------------------------------------------")
 
 tau_e = 1.0
 
@@ -154,7 +154,7 @@ check("E3: sweep echo amplitudes match exp(-2τ/T2)",
 # ===========================================================================
 # Group F - CPMG echo train
 # ===========================================================================
-print("\n── Group F: CPMG echo train ──────────────────────────────────────────")
+print("\n-- Group F: CPMG echo train ------------------------------------------")
 
 n_e   = 5
 tau_f = 1.0
@@ -180,7 +180,7 @@ check("F7: CPMG ends near 2n·τ",          np.isclose(t_cp[-1], 2*n_e*tau_f, rt
 # ===========================================================================
 # Group G - T2 extraction from echo sweep
 # ===========================================================================
-print("\n── Group G: T2 extraction from echo sweep ────────────────────────────")
+print("\n-- Group G: T2 extraction from echo sweep ----------------------------")
 
 tau_sweep  = np.linspace(0.5, 15.0, 12)   # nice round dt-compatible values
 two_tau_sw, amps_sw = sweep_echo_amplitude(
@@ -196,7 +196,7 @@ check(f"G1: fitted T2 = {T2_fit:.2f} µs ≈ {T2} µs (rtol 5%)",
 # ===========================================================================
 # Group H - input validation
 # ===========================================================================
-print("\n── Group H: Input validation ─────────────────────────────────────────")
+print("\n-- Group H: Input validation -----------------------------------------")
 
 for label, fn, kwargs in [
     ("H1: hahn raises on tau≤0",

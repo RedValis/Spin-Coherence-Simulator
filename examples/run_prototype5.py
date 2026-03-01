@@ -38,7 +38,7 @@ SEED   = 42
 
 print("=== Prototype 5 - Inhomogeneous Ensemble ===\n")
 
-# ── Plot 1: FID for several sigma values ─────────────────────────────────────
+# -- Plot 1: FID for several sigma values -------------------------------------
 sigmas  = [0.0, 0.15, 0.30, 0.60]
 colors  = ["#2C7BB6", "#6A994E", "#E63946", "#9B2226"]
 t_max_fid = 3 * T2
@@ -85,7 +85,7 @@ p1 = os.path.join(OUT, "prototype5_fid_sigma_sweep.png")
 fig1.savefig(p1, dpi=150, bbox_inches="tight")
 print(f"  Saved → {p1}")
 
-# ── Plot 2: FID vs Hahn echo — T2* vs T2 ─────────────────────────────────────
+# -- Plot 2: FID vs Hahn echo — T2* vs T2 -------------------------------------
 sigma2 = 0.40
 tau2   = 6.0
 
@@ -141,7 +141,7 @@ p2 = os.path.join(OUT, "prototype5_fid_vs_echo.png")
 fig2.savefig(p2, dpi=150, bbox_inches="tight")
 print(f"  Saved → {p2}")
 
-# ── Plot 3: Echo sweep — T2 extracted independent of sigma ───────────────────
+# -- Plot 3: Echo sweep — T2 extracted independent of sigma -------------------
 tau_arr = np.linspace(1.0, 20.0, 14)
 fig3, ax3 = plt.subplots(figsize=(8, 5))
 

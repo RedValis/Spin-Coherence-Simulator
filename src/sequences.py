@@ -199,20 +199,20 @@ def hahn_echo_sequence(
     else:
         M_eq = np.asarray(M_eq, dtype=float)
 
-    # ── 1. π/2 tip pulse (instantaneous) ────────────────────────────────────
+    # -- 1. π/2 tip pulse (instantaneous) ------------------------------------
     M1 = apply_pulse(M_eq, axis=tip_axis, angle=np.pi / 2)
 
-    # ── 2. Free evolution for τ ──────────────────────────────────────────────
+    # -- 2. Free evolution for τ ----------------------------------------------
     t1, Mx1, My1, Mz1 = free_evolve(M1, tau, dt, gamma, B, T1, T2, M0)
 
-    # ── 3. π refocusing pulse ────────────────────────────────────────────────
+    # -- 3. π refocusing pulse ------------------------------------------------
     M2 = apply_pulse(np.array([Mx1[-1], My1[-1], Mz1[-1]]),
                      axis=refocus_axis, angle=np.pi)
 
-    # ── 4. Free evolution for τ (echo forms at end) ──────────────────────────
+    # -- 4. Free evolution for τ (echo forms at end) --------------------------
     t2, Mx2, My2, Mz2 = free_evolve(M2, tau, dt, gamma, B, T1, T2, M0)
 
-    # ── Stitch (drop the duplicate boundary point) ───────────────────────────
+    # -- Stitch (drop the duplicate boundary point) ---------------------------
     t_full = np.concatenate([t1, t1[-1] + t2[1:]])
     Mx     = np.concatenate([Mx1, Mx2[1:]])
     My     = np.concatenate([My1, My2[1:]])

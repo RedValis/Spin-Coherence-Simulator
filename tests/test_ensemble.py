@@ -37,7 +37,7 @@ def check(name, condition):
     return ok
 
 
-# ── shared physics ─────────────────────────────────────────────────────────
+# -- shared physics ---------------------------------------------------------
 gamma  = 1.0
 B0     = 2 * np.pi * 0.5        # rad/µs
 omega0 = gamma * B0             # = B0 since gamma=1
@@ -53,7 +53,7 @@ SEED   = 42                     # fixed seed for reproducibility
 # ===========================================================================
 # Group A - sample_frequencies
 # ===========================================================================
-print("\n── Group A: sample_frequencies ──────────────────────────────────────")
+print("\n-- Group A: sample_frequencies --------------------------------------")
 
 freqs = sample_frequencies(omega0, sigma, N, seed=SEED)
 check("A1: returns (N,) array",            freqs.shape == (N,))
@@ -91,7 +91,7 @@ except ValueError:
 # ===========================================================================
 # Group B - sigma=0 FID matches single spin
 # ===========================================================================
-print("\n── Group B: sigma=0 FID matches single-spin Bloch ───────────────────")
+print("\n-- Group B: sigma=0 FID matches single-spin Bloch -------------------")
 
 # With sigma=0, ensemble FID = single spin (no dephasing)
 t_fid0, Mx0, My0, Mz0 = simulate_ensemble_FID(
@@ -114,7 +114,7 @@ check("B3: sigma=0 |<M_perp>|(T2) ≈ 1/e",
 # ===========================================================================
 # Group C - FID envelope matches Gaussian formula
 # ===========================================================================
-print("\n── Group C: FID envelope matches M0·exp(-t/T2)·exp(-σ²t²/2) ─────────")
+print("\n-- Group C: FID envelope matches M0·exp(-t/T2)·exp(-σ²t²/2) ---------")
 
 # Use large N for accurate statistics; fixed seed for reproducibility
 N_large = 1500
@@ -140,7 +140,7 @@ check("C3: FID decays faster than exp(-t/T2) with sigma>0",
 # ===========================================================================
 # Group D - larger sigma → faster FID decay
 # ===========================================================================
-print("\n── Group D: Larger sigma → faster FID decay ──────────────────────────")
+print("\n-- Group D: Larger sigma → faster FID decay --------------------------")
 
 results_sigma = {}
 for sig in [0.0, 0.2, 0.5, 1.0]:
@@ -164,7 +164,7 @@ check("D3: sigma=1.0 → smallest (fastest decay)",
 # ===========================================================================
 # Group E - Hahn echo refocuses inhomogeneity
 # ===========================================================================
-print("\n── Group E: Echo amplitude matches exp(-2τ/T2) regardless of σ ──────")
+print("\n-- Group E: Echo amplitude matches exp(-2τ/T2) regardless of σ ------")
 
 tau = 3.0
 for sig_e in [0.0, 0.3, 0.8]:
@@ -182,7 +182,7 @@ for sig_e in [0.0, 0.3, 0.8]:
 # ===========================================================================
 # Group F - T2* < T2: FID decays faster than echo
 # ===========================================================================
-print("\n── Group F: FID decays faster than echo (T2* < T2) ──────────────────")
+print("\n-- Group F: FID decays faster than echo (T2* < T2) ------------------")
 
 sigma_f = 0.25
 tau_f   = 2.0
@@ -219,7 +219,7 @@ check("F3: FID amplitude ≈ exp(-2τ/T2)·exp(-σ²(2τ)²/2) (rtol 15%)",
 # ===========================================================================
 # Group G - Echo sweep gives correct T2 regardless of sigma
 # ===========================================================================
-print("\n── Group G: Echo sweep → correct T2 independent of σ ────────────────")
+print("\n-- Group G: Echo sweep → correct T2 independent of σ ----------------")
 
 tau_arr  = np.array([1.0, 2.0, 3.0, 5.0, 7.0])
 
@@ -239,7 +239,7 @@ for sig_g in [0.0, 0.5]:
 # ===========================================================================
 # Group H - Input validation
 # ===========================================================================
-print("\n── Group H: Input validation ─────────────────────────────────────────")
+print("\n-- Group H: Input validation -----------------------------------------")
 
 try:
     sample_frequencies(omega0, sigma, N=-1)
